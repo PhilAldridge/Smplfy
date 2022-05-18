@@ -1,0 +1,200 @@
+class LevelSelectScene extends Phaser.Scene {
+  constructor() {
+    super("LevelSelectScene");
+  }
+
+  preload() {}
+
+  create(data) {
+    const { width, height } = this.sys.game.config;
+    this.width = width;
+    this.height = height;
+    var currentLevel = 0;
+    if (data.level !== undefined) {
+      currentLevel = data.level;
+    }
+    const levelsCompleted = this.registry.get("levelsCompleted");
+    this.bg = this.add.graphics();
+    this.bg.fillStyle(0x254718, 1);
+    this.bg.fillRect(0, 0, width, height);
+    this.block1 = this.createLevelSelect(currentLevel, levelsCompleted, this);
+  }
+
+  createLevelSelect(currentLevel, levelsCompleted, scene) {
+    var block1 = scene.add.container();
+
+    const tints = [
+      0xffffff,
+      0xffb3b3,
+      0xffd6b3,
+      0xfffab3,
+      0xd6ffb3,
+      0xb3ffdf,
+      0xb3e1ff,
+      0xbbb3ff,
+      0xecb3ff,
+      0xffb3f2
+    ];
+    block1.setPosition(scene.width / 2, scene.height / 2);
+    block1.add([
+      scene.add
+        .image(-15, -290, "titlebutton", 0)
+        .setScale(1.6, 1)
+        .setTint(tints[currentLevel % levelsCompleted.length]),
+      scene.add
+        .image(0, 70, "backboard")
+        .setScale(2, 1.3)
+        .setTint(tints[currentLevel % levelsCompleted.length]),
+      scene.add
+        .text(-15, -290, levelsCompleted[currentLevel].name, {
+          fontFamily: "Gabriola",
+          fontSize: 48,
+          color: scene.registry.get("buttonTextColor")
+        })
+        .setOrigin(0.5, 0.6)
+    ]);
+    if (currentLevel !== 0) {
+      var block1left = scene.add
+        .image(-340, -305, "ui-leftright", 0)
+        .setTint(tints[currentLevel % levelsCompleted.length]);
+      block1left.setInteractive();
+      block1left.on(
+        "pointerdown",
+        () => {
+          this.nextLastLevel(
+            currentLevel,
+            levelsCompleted,
+            scene,
+            false,
+            block1
+          );
+        },
+        {
+          currentLevel: currentLevel,
+          levelsCompleted: levelsCompleted,
+          scene: scene,
+          block1
+        }
+      );
+      block1.add(block1left);
+    }
+    if (
+      !levelsCompleted[currentLevel].subLevelsCompleted.includes(0) &&
+      levelsCompleted.length > currentLevel
+    ) {
+      var block1right = scene.add
+        .image(340, -305, "ui-leftright", 1)
+        .setTint(tints[currentLevel % levelsCompleted.length]);
+      block1right.setInteractive();
+      block1right.on(
+        "pointerdown",
+        () => {
+          this.nextLastLevel(
+            currentLevel,
+            levelsCompleted,
+            scene,
+            true,
+            block1
+          );
+        },
+        {
+          currentLevel: currentLevel,
+          levelsCompleted: levelsCompleted,
+          scene: scene,
+          block1
+        }
+      );
+      block1.add(block1right);
+    }
+    const xposStart = -420;
+    const padding = 140;
+    var xpos = -420;
+    var ypos = -80;
+    var prevComplete = 1;
+    for (
+      var i = 0;
+      i < levelsCompleted[currentLevel].subLevelsCompleted.length;
+      i++
+    ) {
+      var newButton = scene.add
+        .image(xpos, ypos, "numberspos", i + 1)
+        .setScale(0.8);
+      block1.add(newButton);
+      xpos += padding;
+      if (xpos > -xposStart) {
+        xpos = xposStart;
+        ypos += padding;
+      }
+      if (prevComplete) {
+        newButton.setInteractive();
+        newButton.name = i;
+        newButton.on("pointerdown", function (event) {
+          this.scene.scene.start("GameScene", {
+            level: currentLevel,
+            subLevel: this.name
+          });
+        });
+        newButton.on("pointerover", function (event) {
+          this.setTint(0xccccb8);
+        });
+        newButton.on("pointerout", function (event) {
+          this.clearTint();
+        });
+      } else {
+        newButton.setTint(0x787878);
+      }
+      prevComplete = levelsCompleted[currentLevel].subLevelsCompleted[i];
+    }
+
+    return block1;
+  }
+
+  nextLastLevel(currentLevel, levelsCompleted, scene, next, oldBlock) {
+    const transitionTime = 1000;
+    if (next) {
+      currentLevel++;
+      var newBlock = scene.createLevelSelect(
+        currentLevel,
+        levelsCompleted,
+        scene
+      );
+      newBlock.x = (scene.width * 3) / 2;
+      scene.tweens.add({
+        targets: oldBlock,
+        x: -scene.width / 2,
+        y: scene.height / 2,
+        duration: transitionTime,
+        ease: "Cubic"
+      });
+    } else {
+      currentLevel--;
+      var newBlock = scene.createLevelSelect(
+        currentLevel,
+        levelsCompleted,
+        scene
+      );
+      newBlock.x = -scene.width / 2;
+      scene.tweens.add({
+        targets: oldBlock,
+        x: (3 * scene.width) / 2,
+        y: scene.height / 2,
+        duration: transitionTime,
+        ease: "Cubic"
+      });
+    }
+    scene.tweens.add({
+      targets: newBlock,
+      x: scene.width / 2,
+      y: scene.height / 2,
+      duration: transitionTime,
+      ease: "Cubic"
+    });
+
+    setTimeout(() => {
+      oldBlock.destroy();
+    }, transitionTime);
+    return newBlock;
+  }
+}
+
+export default LevelSelectScene;
