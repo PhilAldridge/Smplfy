@@ -7,4 +7,4 @@ In the background is an SQL database (communicated to through jQuery) that store
 
 See it in action here: https://elasticmaths.epizy.com/smplfy/
 
-![This is an image](https://elasticmaths.epizy.com/assets/smplfylogo.png)
+![This is an image](smplfylogo.png)
